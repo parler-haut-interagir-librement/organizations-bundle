@@ -26,6 +26,11 @@ use Phil\OrganizationsBundle\Application\Units;
 use Phil\OrganizationsBundle\Application\UnitTree;
 use Phil\OrganizationsBundle\Domain\Event\MemberJoined;
 use Phil\OrganizationsBundle\Domain\Event\OrganizationCreated;
+use Phil\OrganizationsBundle\Domain\Event\UnitCreated;
+use Phil\OrganizationsBundle\Domain\Event\UnitMemberAdded;
+use Phil\OrganizationsBundle\Domain\Event\UnitMemberRemoved;
+use Phil\OrganizationsBundle\Domain\Event\UnitMemberRolesChanged;
+use Phil\OrganizationsBundle\Domain\Event\UnitMoved;
 use Phil\OrganizationsBundle\Domain\ValueObject\MemberId;
 use Phil\OrganizationsBundle\Domain\ValueObject\Roles;
 use Phil\OrganizationsBundle\Infrastructure\Access\MembershipTuples;
@@ -42,6 +47,7 @@ use Phil\OrganizationsBundle\Infrastructure\Doctrine\OrganizationSchemaListener;
 use Phil\OrganizationsBundle\Infrastructure\Http\UnitAdminController;
 use Phil\OrganizationsBundle\Infrastructure\Memory\InMemoryOrganizationStore;
 use Phil\OrganizationsBundle\Infrastructure\Privacy\OrganizationsPrivacy;
+use Phil\OrganizationsBundle\Infrastructure\Reporting\ReportingUnitDirectory;
 use Phil\OrganizationsBundle\Infrastructure\Security\OrganizationVoter;
 use Phil\OrganizationsBundle\Infrastructure\Security\UserIdentifierMember;
 use Phil\OrganizationsBundle\Infrastructure\Twig\KitComponents;
@@ -49,6 +55,7 @@ use Phil\OrganizationsBundle\Infrastructure\Twig\OrganizationsExtension;
 use Phil\OrganizationsBundle\PhilOrganizationsBundle;
 use Phil\OrganizationsBundle\Tests\Fixtures\RacingStore;
 use Phil\OrganizationsBundle\Tests\Fixtures\RecordingDispatcher;
+use Phil\ReportingBundle\Application\Contract\UnitDirectory;
 use Phil\ResourcePermissions\RelationWriter;
 use Phil\Slug\TransliteratingSlugger;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -177,6 +184,9 @@ final class PhilOrganizationsBundleTest extends TestCase
         new UnitServicesPass()->process($container);
         self::assertTrue($container->hasAlias(UnitStore::class));
         self::assertTrue($container->hasDefinition(Units::class));
+        self::assertSame(ReportingUnitDirectory::class, (string) $container->getAlias(UnitDirectory::class));
+        self::assertFalse($container->getAlias(UnitDirectory::class)->isPublic());
+        self::assertEquals([new Reference(UnitTree::class)], $container->getDefinition(ReportingUnitDirectory::class)->getArguments());
 
         $other = $this->load([['store' => 'app.store']]);
         $other->register('app.store', RacingStore::class);
@@ -188,6 +198,13 @@ final class PhilOrganizationsBundleTest extends TestCase
         }
 
         self::assertTrue($other->hasDefinition(Members::class));
+        self::assertFalse($other->hasAlias(UnitDirectory::class), 'Without units, the training reports name each unit alone.');
+
+        $own = $this->load([['store' => 'app.store']]);
+        $own->register('app.store', RacingStore::class);
+        $own->setAlias(UnitDirectory::class, 'app.directory');
+        new UnitServicesPass()->process($own);
+        self::assertSame('app.directory', (string) $own->getAlias(UnitDirectory::class), "The application's own directory is kept.");
 
         $missing = $this->load([['store' => 'app.store']]);
         new UnitServicesPass()->process($missing);
@@ -305,10 +322,37 @@ final class PhilOrganizationsBundleTest extends TestCase
         $container = $this->load([['access' => ['enabled' => true, 'organization_kind' => 'guild', 'team_kind' => 'squad']]]);
 
         self::assertTrue($container->getDefinition(OrganizationRelations::class)->hasTag('phil_access.model_contributor'));
-        self::assertSame(['guild', 'squad'], \array_slice($container->getDefinition(OrganizationRelations::class)->getArguments(), 2));
+        self::assertEquals(['guild', 'squad', new Reference(OrganizationsServices::UNIT_ROLES), 'unit'], \array_slice($container->getDefinition(OrganizationRelations::class)->getArguments(), 2));
         $listeners = $container->getDefinition(MembershipTuples::class)->getTag('kernel.event_listener');
-        self::assertCount(8, $listeners);
+        self::assertCount(13, $listeners);
         self::assertContains(['event' => MemberJoined::class, 'method' => 'onMemberJoined'], $listeners);
+        self::assertContains(['event' => UnitCreated::class, 'method' => 'onUnitCreated'], $listeners);
+        self::assertContains(['event' => UnitMoved::class, 'method' => 'onUnitMoved'], $listeners);
+        self::assertContains(['event' => UnitMemberAdded::class, 'method' => 'onUnitMemberAdded'], $listeners);
+        self::assertContains(['event' => UnitMemberRolesChanged::class, 'method' => 'onUnitMemberRolesChanged'], $listeners);
+        self::assertContains(['event' => UnitMemberRemoved::class, 'method' => 'onUnitMemberRemoved'], $listeners);
+    }
+
+    public function testTheUnitsInTheAccessModel(): void
+    {
+        $named = $this->load([['access' => ['enabled' => true, 'unit_kind' => 'department']]]);
+        self::assertEquals([new Reference(OrganizationsServices::UNIT_ROLES), 'department'], \array_slice($named->getDefinition(OrganizationRelations::class)->getArguments(), 4));
+
+        $out = $this->load([['access' => ['enabled' => true, 'unit_kind' => null]]]);
+        self::assertSame([null, null], \array_slice($out->getDefinition(OrganizationRelations::class)->getArguments(), 4));
+
+        $other = $this->load([['store' => 'app.store', 'access' => ['enabled' => true]]]);
+        $other->register('app.store', RacingStore::class);
+        new UnitServicesPass()->process($other);
+        self::assertSame([null, 'unit'], \array_slice($other->getDefinition(OrganizationRelations::class)->getArguments(), 4));
+
+        $kept = $this->load([['access' => ['enabled' => true]]]);
+        new UnitServicesPass()->process($kept);
+        self::assertEquals(new Reference(OrganizationsServices::UNIT_ROLES), $kept->getDefinition(OrganizationRelations::class)->getArgument(4));
+
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessageIsOrContains('The kind of the units is a name, or null to leave the units out of the access model.');
+        $this->load([['access' => ['enabled' => true, 'unit_kind' => '']]]);
     }
 
     public function testTheTuplesFollowTheAccessBundleByDefault(): void

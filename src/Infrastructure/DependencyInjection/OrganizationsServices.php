@@ -33,6 +33,11 @@ use Phil\OrganizationsBundle\Domain\Event\TeamDeleted;
 use Phil\OrganizationsBundle\Domain\Event\TeamMemberAdded;
 use Phil\OrganizationsBundle\Domain\Event\TeamMemberRemoved;
 use Phil\OrganizationsBundle\Domain\Event\TeamMemberRolesChanged;
+use Phil\OrganizationsBundle\Domain\Event\UnitCreated;
+use Phil\OrganizationsBundle\Domain\Event\UnitMemberAdded;
+use Phil\OrganizationsBundle\Domain\Event\UnitMemberRemoved;
+use Phil\OrganizationsBundle\Domain\Event\UnitMemberRolesChanged;
+use Phil\OrganizationsBundle\Domain\Event\UnitMoved;
 use Phil\OrganizationsBundle\Infrastructure\Access\MembershipTuples;
 use Phil\OrganizationsBundle\Infrastructure\Access\OrganizationRelations;
 use Phil\OrganizationsBundle\Infrastructure\Console\CheckOwnersCommand;
@@ -44,11 +49,13 @@ use Phil\OrganizationsBundle\Infrastructure\Doctrine\OrganizationSchemaListener;
 use Phil\OrganizationsBundle\Infrastructure\Http\UnitAdminController;
 use Phil\OrganizationsBundle\Infrastructure\Memory\InMemoryOrganizationStore;
 use Phil\OrganizationsBundle\Infrastructure\Privacy\OrganizationsPrivacy;
+use Phil\OrganizationsBundle\Infrastructure\Reporting\ReportingUnitDirectory;
 use Phil\OrganizationsBundle\Infrastructure\Security\OrganizationVoter;
 use Phil\OrganizationsBundle\Infrastructure\Security\UserIdentifierMember;
 use Phil\OrganizationsBundle\Infrastructure\Twig\KitComponents;
 use Phil\OrganizationsBundle\Infrastructure\Twig\OrganizationsExtension;
 use Phil\PrivacyBundle\Application\Contract\PersonalDataEraser;
+use Phil\ReportingBundle\Application\Contract\UnitDirectory;
 use Phil\ResourcePermissions\RelationWriter;
 use Phil\Slug\Slugger;
 use Phil\Slug\TransliteratingSlugger;
@@ -66,7 +73,7 @@ use Twig\Environment;
 /**
  * The services of the bundle, from its processed configuration.
  *
- * @phpstan-type Config array{store: string, connection: string, clock: string, slugger: string|null, member_of_user: string|null, recommended_owners: positive-int, roles: array<string, array{permissions: list<string>}>, team_roles: array<string, array{permissions: list<string>}>, unit_roles: array<string, array{permissions: list<string>}>, units: array{single_membership: bool, layout: string, kit_subdirectory: string|null}, invitations: array{hash_key: non-empty-list<string>, default_lifetime: positive-int, max_lifetime: positive-int, default_uses: positive-int, max_uses: positive-int, purge_retention: non-negative-int}, domain_join: array{enabled: bool, roles: list<string>}, access: array{enabled: bool|null, organization_kind: string, team_kind: string}}
+ * @phpstan-type Config array{store: string, connection: string, clock: string, slugger: string|null, member_of_user: string|null, recommended_owners: positive-int, roles: array<string, array{permissions: list<string>}>, team_roles: array<string, array{permissions: list<string>}>, unit_roles: array<string, array{permissions: list<string>}>, units: array{single_membership: bool, layout: string, kit_subdirectory: string|null}, invitations: array{hash_key: non-empty-list<string>, default_lifetime: positive-int, max_lifetime: positive-int, default_uses: positive-int, max_uses: positive-int, purge_retention: non-negative-int}, domain_join: array{enabled: bool, roles: list<string>}, access: array{enabled: bool|null, organization_kind: string, team_kind: string, unit_kind: string|null}}
  */
 final readonly class OrganizationsServices
 {
@@ -95,6 +102,11 @@ final readonly class OrganizationsServices
         TeamMemberAdded::class => 'onTeamMemberAdded',
         TeamMemberRolesChanged::class => 'onTeamMemberRolesChanged',
         TeamMemberRemoved::class => 'onTeamMemberRemoved',
+        UnitCreated::class => 'onUnitCreated',
+        UnitMoved::class => 'onUnitMoved',
+        UnitMemberAdded::class => 'onUnitMemberAdded',
+        UnitMemberRolesChanged::class => 'onUnitMemberRolesChanged',
+        UnitMemberRemoved::class => 'onUnitMemberRemoved',
     ];
 
     private function __construct()
@@ -142,6 +154,19 @@ final readonly class OrganizationsServices
         self::console($container, $config);
         self::privacy($container);
         self::access($container, $config);
+        self::reporting($container);
+    }
+
+    /**
+     * The tree of units as the unit directory of phil/reporting-bundle, when it is installed: its training reports name
+     * each unit and place it under its parent. An application that names its own directory keeps it.
+     */
+    private static function reporting(ContainerBuilder $container): void
+    {
+        if (interface_exists(UnitDirectory::class)) {
+            $container->register(ReportingUnitDirectory::class, ReportingUnitDirectory::class)->setArguments([new Reference(UnitTree::class)]);
+            $container->setAlias(UnitDirectory::class, ReportingUnitDirectory::class);
+        }
     }
 
     /**
@@ -298,7 +323,14 @@ final readonly class OrganizationsServices
         }
 
         $container->register(OrganizationRelations::class, OrganizationRelations::class)
-            ->setArguments([new Reference(self::ROLES), new Reference(self::TEAM_ROLES), $config['access']['organization_kind'], $config['access']['team_kind']])
+            ->setArguments([
+                new Reference(self::ROLES),
+                new Reference(self::TEAM_ROLES),
+                $config['access']['organization_kind'],
+                $config['access']['team_kind'],
+                null === $config['access']['unit_kind'] ? null : new Reference(self::UNIT_ROLES),
+                $config['access']['unit_kind'],
+            ])
             ->addTag(self::CONTRIBUTOR_TAG);
         $tuples = $container->register(MembershipTuples::class, MembershipTuples::class)
             ->setArguments([new Reference(RelationWriter::class), new Reference(OrganizationRelations::class)]);

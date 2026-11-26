@@ -4,6 +4,36 @@ All notable changes to `phil/organizations-bundle` will be documented in this fi
 
 Updates should follow the [Keep a CHANGELOG](https://keepachangelog.com/) principles.
 
+## 0.3.0-alpha - 2026-11-26
+
+The units in the access model of `phil/access-bundle`, their roles holding below them as they do in `UnitAccess`. A
+minor version and not a patch: with that bundle, a kind `unit` joins the model, and a model that already holds one
+names the units otherwise. See [Upgrading](doc/upgrading.md#from-02-to-03).
+
+### Added
+
+- The kind `unit` in the access model of `OrganizationRelations` — `organization` and `parent` relations, one relation
+  per unit role given to members or held through the parent —, and the tuples `MembershipTuples` writes when a unit is
+  created or moves and when its members join, change roles or leave it.
+- The configuration `access.unit_kind`, `unit` by default, `null` to leave the units out of the access model, as a
+  store that keeps no units does.
+- `ReportingUnitDirectory`, the `UnitDirectory` of phil/reporting-bundle when it is installed: its training reports
+  name each unit and place it under its parent, archived units included; left out with the units of a store that keeps
+  none.
+
+### Changed
+
+- `OrganizationRelations` takes the unit roles and the kind of the units after the kind of the teams; a unit role
+  named `organization` or `parent` stops the container when the units are in the access model.
+
+- The development requirements accept `phil/privacy-bundle` 0.3, the minor version of its main branch and no earlier
+  one, so that the package installs on its own beside that bundle.
+- Requires the latest minor of each dependency (`doctrine/dbal` 4.6, `phil/access-links` 0.2,
+  `symfony/service-contracts` 3.8), and of each development requirement (`doctrine/orm` 3.8,
+  `doctrine/doctrine-bundle` 3.4, `twig/twig` 3.31, `symfony/ux-twig-component` 3.8, …).
+- The development requirements take `twig/twig` 3.31.1 or later, which fixes the advisories of its sandbox published on
+  2026-11-24.
+
 ## 0.2.0-alpha - 2026-11-20
 
 The units of an organization, in a tree whose roles hold below them. A minor version and

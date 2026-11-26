@@ -1,4 +1,4 @@
-<!-- phil-dev source-sha256=92dac482d45e6978505c7d7faaa6766dc8e206f97d1c22b17db9b4bf6d238997 -->
+<!-- phil-dev source-sha256=568be6345b19110de65ec88249b4355b575a1836744608e21ebec737ddf8f4f6 -->
 # Référence
 
 Chaque type public du paquet, avec son rôle.
@@ -73,8 +73,9 @@ Chaque type public du paquet, avec son rôle.
 | `Infrastructure\Security\UserIdentifierMember` | L'identifiant de l'utilisateur comme membre, quand c'est un identifiant stable. |
 | `Infrastructure\Console\ListOrganizationsCommand`, `ShowOrganizationCommand`, `CheckOwnersCommand`, `PurgeInvitationsCommand` | Les commandes de [Console](console.md). |
 | `Infrastructure\Privacy\OrganizationsPrivacy` | L'exportateur et l'effaceur de `phil/privacy-bundle`. |
-| `Infrastructure\Access\OrganizationRelations` | Les genres et les relations ajoutés au modèle d'accès de `phil/access-bundle`. |
-| `Infrastructure\Access\MembershipTuples` | Les adhésions et les rôles publiés comme tuples. |
+| `Infrastructure\Reporting\ReportingUnitDirectory` | Le `UnitDirectory` de `phil/reporting-bundle` : le chemin d'une unité depuis sa racine, pour ses rapports de formation. |
+| `Infrastructure\Access\OrganizationRelations` | Les genres et les relations ajoutés au modèle d'accès de `phil/access-bundle` : organisations, équipes et, avec des rôles d'unité, unités dont les rôles valent en dessous d'elles. |
+| `Infrastructure\Access\MembershipTuples` | Les adhésions, les rôles, les unités et leurs parents publiés comme tuples. |
 | `Infrastructure\DependencyInjection\OrganizationsServices` | Les services, tirés de la configuration. |
 | `PhilOrganizationsBundle` | Le bundle : sa configuration `phil_organizations` et ses services. |
 

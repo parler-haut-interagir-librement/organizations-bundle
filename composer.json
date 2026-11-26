@@ -25,22 +25,23 @@
         "php": ">=8.5",
         "ext-filter": "*",
         "ext-mbstring": "*",
-        "doctrine/dbal": "^4.5",
-        "phil/access-links": "^0.1@dev || ^0.2@dev",
+        "doctrine/dbal": "^4.6",
+        "phil/access-links": "^0.2@dev",
         "phil/slug": "^0.1@dev",
         "psr/clock": "^1.0",
         "psr/event-dispatcher": "^1.0",
         "symfony/config": "^8.2",
         "symfony/dependency-injection": "^8.2",
-        "symfony/service-contracts": "^3.6",
+        "symfony/service-contracts": "^3.8",
         "symfony/uid": "^8.2"
     },
     "require-dev": {
-        "doctrine/doctrine-bundle": "^3.3",
+        "doctrine/doctrine-bundle": "^3.4",
         "doctrine/migrations": "^3.9",
-        "doctrine/orm": "^3.7",
+        "doctrine/orm": "^3.8",
         "phil/access-bundle": "^0.2@dev",
-        "phil/privacy-bundle": "^0.1@dev",
+        "phil/privacy-bundle": "^0.3@dev",
+        "phil/reporting-bundle": "^0.2@dev",
         "phil/resource": "^0.1@dev",
         "phil/resource-permissions": "^0.2@dev",
         "phil/ux-kit": ">=0.5.0-alpha <1.0",
@@ -52,7 +53,7 @@
         "symfony/css-selector": "^8.2",
         "symfony/dom-crawler": "^8.2",
         "symfony/event-dispatcher": "^8.2",
-        "symfony/event-dispatcher-contracts": "^3.6",
+        "symfony/event-dispatcher-contracts": "^3.8",
         "symfony/framework-bundle": "^8.2",
         "symfony/http-foundation": "^8.2",
         "symfony/http-kernel": "^8.2",
@@ -61,14 +62,15 @@
         "symfony/security-csrf": "^8.2",
         "symfony/translation": "^8.2",
         "symfony/twig-bundle": "^8.2",
-        "symfony/ux-twig-component": "^3.7",
+        "symfony/ux-twig-component": "^3.8",
         "symfony/yaml": "^8.2",
-        "twig/twig": "^3.21"
+        "twig/twig": "^3.31.1"
     },
     "suggest": {
         "doctrine/orm": "To add the tables to the schema the ORM generates, for doctrine:migrations:diff",
         "phil/access-bundle": "To publish memberships and roles as relations and tuples, partitioned by tenant",
         "phil/privacy-bundle": "For the exporter and eraser of a member's personal data",
+        "phil/reporting-bundle": "To name each unit and place it under its parent in the training reports",
         "phil/ux-kit": "For the recipes the administration pages of the units draw — Badge, Button, Input, NativeSelect, Table, Tree —, through the Symfony UX Toolkit",
         "symfony/console": "For phil:organizations:list, show, check-owners and purge-invitations",
         "symfony/security-core": "For the voter of the organization permissions and roles",
@@ -89,7 +91,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "0.2.x-dev"
+            "dev-main": "0.3.x-dev"
         }
     }
 }

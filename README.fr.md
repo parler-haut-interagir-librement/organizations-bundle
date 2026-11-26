@@ -1,4 +1,4 @@
-<!-- phil-dev source-sha256=6429cec1e5c45e318a8b4821897e08da37c3c9fb1db8535911263c4da01ed63e -->
+<!-- phil-dev source-sha256=9e74c296a6885c04df6bde14651a8e97d048d08062f065b8d8f3433f5df8ab87 -->
 # phil/organizations-bundle
 
 **Des organisations pour Symfony, destinées à quiconque construit son propre service d'identité et d'accès : membres,
@@ -32,8 +32,9 @@ Chaque changement s'exécute dans une seule transaction et ses **événements so
 avec des identifiants seulement. `OrganizationVoter` répond à `is_granted('organization:<permission>', $organization)`,
 à `is_granted('organization_role:<role>', $organization)`, ainsi qu'à `unit:<permission>` et `unit_role:<role>` sur une
 unité. Avec `phil/privacy-bundle`, un exportateur et un effaceur répondent aux demandes d'accès et d'effacement d'un
-membre ; avec `phil/access-bundle`, les adhésions et les rôles sont publiés comme relations et tuples de
-`phil/resource-permissions`, dans la partition du locataire actif.
+membre ; avec `phil/access-bundle`, les adhésions, les rôles et les unités sont publiés comme relations et tuples de
+`phil/resource-permissions`, dans la partition du locataire actif, un rôle d'unité valant dans les unités en dessous
+comme dans `UnitAccess`.
 
 C'est un bundle Symfony fondé sur Doctrine DBAL, `phil/slug`, `phil/access-links`, PSR-14 et PSR-20 ; la console, la
 sécurité de Symfony, Doctrine ORM, Twig, `phil/privacy-bundle` et `phil/access-bundle` sont facultatifs. Les
@@ -61,7 +62,7 @@ recettes du kit PHIL UX.
 | `OrganizationVoter` pour les permissions et les rôles | Implémenté et testé |
 | Magasin Doctrine DBAL sur SQLite, MySQL et PostgreSQL, collation binaire sur les colonnes de clé, écouteur de schéma ; magasin en mémoire | Implémenté et testé |
 | Commandes pour lister, afficher, vérifier les propriétaires et purger les invitations | Implémenté et testé |
-| Exportateur et effaceur pour `phil/privacy-bundle` ; relations et tuples pour `phil/access-bundle`, partitionnés par locataire | Implémenté et testé |
+| Exportateur et effaceur pour `phil/privacy-bundle` ; relations et tuples pour `phil/access-bundle`, partitionnés par locataire, unités et rôles hérités compris | Implémenté et testé |
 
 ## Documentation
 
@@ -77,7 +78,7 @@ recettes du kit PHIL UX.
 | [Invitations](doc/fr/invitations.md) | Créer, accepter, révoquer et purger des invitations ; adhérer par un domaine vérifié. |
 | [Agir au nom de l'organisation](doc/fr/on-behalf.md) | Agir comme l'organisation pendant que le véritable auteur est consigné. |
 | [Événements](doc/fr/events.md) | Chaque événement, quand il est émis et ce qu'il porte. |
-| [Intégrations](doc/fr/integrations.md) | Le voter, `phil/privacy-bundle`, `phil/access-bundle`, `phil/audit-bundle`. |
+| [Intégrations](doc/fr/integrations.md) | Le voter, `phil/privacy-bundle`, `phil/access-bundle`, `phil/reporting-bundle`, `phil/audit-bundle`. |
 | [Console](doc/fr/console.md) | Les quatre commandes. |
 | [Notes de sécurité](doc/fr/security.md) | Ce dont le bundle se défend, et ce qu'il laisse à l'application. |
 | [Points d'extension](doc/fr/extension-points.md) | Les services à remplacer, les contrats à implémenter, et quand ils sont stables. |
